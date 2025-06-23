@@ -9,11 +9,15 @@
 #include "esp_lcd_panel_vendor.h"
 #include "esp_lcd_panel_ops.h"
 #include "lvgl.h"
-#include <drivers/display/lcd/lv_lcd_generic_mipi.h>
+#include <drivers/display/lcd/lv_lcd_generic_mipi.h>  // Don't forget to enable the Generic MIPI display driver in menuconfig!
 
 #define TAG "LVGL"
 
-// SPI and display pins for TTGO T-Display
+// SPI and display pins for TTGO T-Display which uses ST7789V display
+// You can change these to match your own display, but make sure to also change the LCD_X_OFFSET and LCD_Y_OFFSET values below
+// If you see "noise" outside the display area, you probably need to adjust these offsets
+// You can choose a different display driver in menuconfig, make sure to select the correct one for your display controller (ST7735, ILI9341, etc.)
+// Also adjust LCD_WIDTH and LCD_HEIGHT to match your display resolution
 #define PIN_NUM_MOSI 19
 #define PIN_NUM_CLK 18
 #define PIN_NUM_CS 5
@@ -25,23 +29,23 @@
 #define LCD_PIXEL_CLOCK_HZ 40000000 // 40 MHz
 #define LCD_CMD_BITS 8
 #define LCD_PARAM_BITS 8
-#define LCD_WIDTH 240
-#define LCD_HEIGHT 135
-#define LCD_X_OFFSET 40
-#define LCD_Y_OFFSET 53
+#define LCD_WIDTH 240    // You will need to tweak this if you choose another display
+#define LCD_HEIGHT 135   // You will need to tweak this if you choose another display
+#define LCD_X_OFFSET 40  // You will need to tweak this if you choose another display
+#define LCD_Y_OFFSET 53  // You will need to tweak this if you choose another display
 #define BUFFER_HEIGHT 135
 
 static lv_display_t *disp = NULL;
 static esp_lcd_panel_handle_t panel_handle = NULL;
 static lv_color_t *buf1 = NULL;
 
-// Periodieke tick voor lv_tick_inc()
+// Periodical tick for lv_tick_inc()
 static void lv_tick_cb(void *arg)
 {
     lv_tick_inc(1);
 }
 
-// Periodical verwerking van LVGL timers (rendering, input, animatie)
+// Periodical LVGL updates using a timer (rendering, input, animation)
 static void lvgl_timer_cb(void *arg)
 {
     lv_timer_handler();
@@ -62,7 +66,7 @@ void app_main(void)
         .pin_bit_mask = 1ULL << PIN_NUM_BCKL,
     };
     ESP_ERROR_CHECK(gpio_config(&bklt_config));
-    gpio_set_level(PIN_NUM_BCKL, 1); // Zet backlight aan
+    gpio_set_level(PIN_NUM_BCKL, 1); // Turn on backlight
 
     // SPI bus config
     spi_bus_config_t buscfg = {
